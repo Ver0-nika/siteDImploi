@@ -1,0 +1,414 @@
+* fichier: .env
+DB_DATABASE=larajob
+DB_USERNAME=root
+DB_PASSWORD=
+
+* fichier config/database.php
+'strict' => false,
+
+* localhost/phpmyadmin/server_database.php 
+creat new database "larajob"
+
+* terminal: cd larajob
+terminal: php artisan serve
+
+* localhost:8000
+on voit title page
+
+* terminal: php artisan make:auth
+pour ajouter login et register forms
+
+* terminal: php artisan serve
+
+* localhost:8000
+on voit les changement en haut à droite
+
+
+//some of tables for creating
+1. jobs
+2.companies
+3.users seeker/employer
+4.profiles
+5.categories
+
+* terminal: php artisan make:model Profile -m
+"-m" for creating migration file as well
+
+* terminal: php artisan make:model Company -m
+
+* terminal: php artisan make:model Category -m
+
+* terminal: php artisan make:model Job -m
+
+* terminal: php artisan make:migration create_job_user_table
+
+* terminal: php artisan make:migration create_favourites_table
+
+* ajouter dans database/migrations/create_users_table.php
+
+	    $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('user_type');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+
+* ajouter dans database/migrations/create_profiles_table.php
+
+            $table->bigIncrements('id');
+            $table->string('user_id');
+            $table->string('address');
+            $table->string('gender');
+            $table->string('dob');
+            $table->string('experience');
+            $table->string('bio');
+            $table->string('cover_letter');
+            $table->string('resume');
+            $table->string('avatar');
+            $table->timestamps();
+
+* ajouter dans database/migrations/create_companies_table.php
+
+            $table->bigIncrements('id');
+            $table->integer('user_id');
+            $table->string('cname');
+            $table->string('slug');
+            $table->string('address');
+            $table->string('phone');
+            $table->string('website');
+            $table->string('logo');
+            $table->string('cover_photo');
+            $table->string('slogan');
+            $table->string('description');
+            $table->timestamps();
+
+* ajouter dans database/migrations/create_categories_table.php
+
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->timestamps();
+
+* ajouter dans database/migrations/create_job_user_table.php
+
+            $table->bigIncrements('id');
+            $table->integer('job_id');
+            $table->integer('user_id');
+            $table->timestamps();
+
+* ajouter dans database/migrations/create_favourites_table.php
+
+            $table->bigIncrements('id');
+            $table->integer('job_id');
+            $table->integer('user_id');
+            $table->timestamps();
+
+* ajouter dans database/migrations/create_jobs_table.php
+	
+            $table->bigIncrements('id');
+	$table->string('user_id');
+            $table->string('company_id');
+            $table->string('title');
+            $table->string('slug');
+            $table->text('description');
+	$table->text('roles');
+            $table->integer('category_id');
+            $table->string('position');
+            $table->string('address');
+            $table->string('type');
+            $table->integer('status');
+            $table->date('last_date');
+            $table->timestamps();
+
+* terminal: php artisan migrate
+ou terminal: php artisan migrate:fresh
+now we have all tables in our database (localhost/phpmyadmin)
+
+
+
+* https://github.com/fzaninotto/Faker
+
+for creating fake data
+
+* download image larajob/public/avatar/man.jpg
+* download image larajob/public/cover/tumblr-image-sizes-banner.png
+
+* add in file database/factories/UserFactory.php
+
+$factory->define(User::class, function (Faker $faker) {
+    return [
+        'name' => $faker->name,
+        'email' => $faker->unique()->safeEmail,
+        'user_type'=>'seeker',
+        'email_verified_at' => now(),
+        'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+        'remember_token' => Str::random(10),
+    ];
+});
+
+$factory->define(App\Company::class, function (Faker $faker) {
+    return [
+        'user_id'=>App\User::all()->random()->id,
+        'cname'=>$name=$faker->company,
+        'slug'=>str_slug($name),
+        'address'=>$faker->address,
+        'phone'=>$faker->phoneNumber,
+        'website'=>$faker->domainName,
+        'logo'=>'avatar/man.jpg',
+        'cover_photo'=>'cover/tumblr-image-sizes-banner.png',
+        'slogan'=>'learn-earn and grow',
+        'description'=>$faker->paragraph(rand(2,10))
+
+    ];
+});
+
+$factory->define(App\Job::class, function (Faker $faker) {
+    return [
+        'user_id'=>App\User::all()->random()->id,
+        'company_id'=>App\Company::all()->random()->id,
+        'title'=>$title=$faker->text,
+        'slug'=>str_slug($title),
+        'position'=>$faker->jobTitle,
+        'address'=>$faker->address,
+        'category_id'=>rand(1,5),
+        'type'=>'fulltime',
+        'status'=>rand(0,1),
+        'description'=>$faker->paragraph(rand(2,10)),
+	'roles'=>$faker->text,
+        'last_date'=>$faker->DateTime
+    ];
+});
+
+* file database/seeds/DatabaseSeeder.php: add in public function run(){} 
+
+        factory('App\User',20)->create();
+        factory('App\Company',20)->create();
+        factory('App\Job',20)->create();
+
+* terminal: php artisan db:seed
+
+now we have a lot of fake data in our database
+
+
+
+* resources/views/welcome.blade.php
+
+delete everything and write:
+
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="row">
+        <h1>Recent Jobs</h1>
+        <table class="table">
+            <thead>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </thead>
+            <tbody>
+                @for($i=0;$i<10;$i++)
+                <tr>
+                    <td><img src="{{asset('avatar/man.jpg')}}" width="80"></td>
+                    <td>Position:web developer
+                        <br>
+                        <i class="fa fa-clock-o" aria-hidden="true"></i>&nbsp;fulltime
+                    </td>
+                    <td><i class="fa fa-map-marker" aria-hidden="true"></i>&nbsp;Address:Melbourne</td>
+                    <td><i class="fa fa-globe" aria-hidden="true"></i>&nbsp;Date:2019-03-21</td>
+                    <td><button class="btn btn-success btn-sm">Apply</button></td>
+                </tr>
+                @endfor
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection
+
+<style>
+    .fa{
+        color: #4183D7;
+    }
+</style>
+
+* resources/views/layouts/app.blade.php
+
+add in the end of head (took from https://fontawesome.com/start):
+
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+terminal: php artisan make:controller JobController
+
+app/Http/Controllers/JobController.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Job;
+
+class JobController extends Controller
+{
+   public function index(){
+   		$jobs = Job::all()->take(10);
+   		return view('welcome',compact('jobs'));
+   } 
+}
+
+
+* routes/web.php
+
+Route::get('/', 'JobController@index');
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+
+
+* resources/views/welcome.blade.php
+
+changement:
+
+                @foreach($jobs as $job)
+                <tr>
+                    <td><img src="{{asset('avatar/man.jpg')}}" width="80"></td>
+                    <td>Position:{{$job->position}}
+                        <br>
+                        <i class="fa fa-clock-o" aria-hidden="true"></i>&nbsp;{{$job->type}}
+                    </td>
+                    <td><i class="fa fa-map-marker" aria-hidden="true"></i>&nbsp;Address:{{$job->address}}</td>
+                    <td><i class="fa fa-globe" aria-hidden="true"></i>&nbsp;Date:{{$job->created_at->diffForHumans()}}</td>
+                    <td><button class="btn btn-success btn-sm">Apply</button></td>
+                </tr>
+                @endforeach
+
+
+
+* create folder in resources/views/jobs
+* create file show.blade.php in folder resources/views/jobs
+
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">{{$job->title}}</div>
+
+                <div class="card-body">
+                    <p>
+                        <h3>Description</h3>
+                        {{$job->description}}
+                    </p>
+                    <p>
+                        <h3>Duties</h3>
+                        {{$job->roles}}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Short Info</div>
+
+                <div class="card-body">
+                    <p>Company:{{$job->company->cname}}</p>
+                    <p>Address:{{$job->address}}</p>
+                    <p>Employment Type:{{$job->type}}</p>
+                    <p>Position:{{$job->position}}</p>
+                    <p>Date:{{$job->created_at->diffForHumans()}}</p>
+                </div>
+            </div>
+		<br>
+            @if(Auth::check()&&Auth::user()->user_type='seeker')
+            <button class="btn btn-success" style="width: 100%;">Apply</button>
+            @endif
+        </div>
+    </div>
+</div>
+@endsection
+
+
+
+* routes/web.php
+Add this:
+
+Route::get('/jobs/{id}/{job}','JobController@show')->name('jobs.show');
+
+
+* add in JobController.php
+
+public function show($id,Job $job){
+   		
+   		return view('jobs.show',compact('job'));
+   }
+
+* welcome.blade.php
+add link for the button
+
+<a href="{{route('jobs.show',[$job->id,$job->slug])}}">
+                        <button class="btn btn-success btn-sm">Apply</button>
+                    </a>
+
+
+* add in job.php
+
+public function getRouteKeyName(){
+    	return 'slug';
+    }
+ public function company(){
+    	return $this->belongsTo('App\Company');
+    }
+
+* Company.php
+
+public function jobs(){
+    	return $this->hasMany('App\Job');
+    }
+
+
+
+* DatabaseSeeder.php
+
+<?php
+
+use Illuminate\Database\Seeder;
+use App\Category;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        // $this->call(UsersTableSeeder::class);
+        factory('App\User',20)->create();
+        factory('App\Company',20)->create();
+        factory('App\Job',20)->create();
+
+        $categories = [
+            'Technology',
+            'Engineering',
+            'Government',
+            'Medical',
+            'Construction',
+            'Software'
+        ];
+        foreach($categories as $category){
+            Category::create(['name'=>$category]);
+        }
+    }
+}
+
+
+* terminal: php artisan db:seed
