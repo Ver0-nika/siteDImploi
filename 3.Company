@@ -1,0 +1,159 @@
+* terminal: php artisan make:controller CompanyController
+
+* CompanyController.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Company;
+
+class CompanyController extends Controller
+{
+    public function index($id, Company $name){
+    	return view('company.index',compact('name'));
+    }
+}
+
+* add in web.php
+
+//company
+Route::get('/company/{id}/{name}','CompanyController@index')->name('company.index');
+
+
+* Company.php:
+
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Company extends Model
+{
+    public function jobs(){
+    	return $this->hasMany('App\Job');
+    }
+    public function getRouteKeyName(){
+    	return 'slug';
+    }
+}
+
+* show.blade.php
+
+add link to Company:
+<p>Company:<a href="{{route('company.index',[$job->company->id,$job->company->slug])}}">{{$job->company->cname}}</a></p>
+
+* create folder company in resources/views
+* create file index.blade.php
+
+
+
+
+* web.php
+
+<?php
+
+Route::get('/', 'JobController@index');
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+
+Route::get('/jobs/{id}/{job}','JobController@show')->name('jobs.show');
+
+//company
+Route::get('/company/{id}/{company}','CompanyController@index')->name('company.index');
+
+
+
+
+* CompanyController.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Company;
+
+class CompanyController extends Controller
+{
+    public function index($id, Company $company){
+    	return view('company.index',compact('company'));
+    }
+}
+
+
+* index.blade.php
+
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="col-md-12">
+        <div class="company-profile">
+            <img src="{{asset('cover/tumblr-image-sizes-banner.png')}}" style="width: 100%;">
+            <div class="company-desc">
+                <img src="{{asset('avatar/man.jpg')}}" width="100">
+                <p>{{$company->description}}</p>
+                <h1>{{$company->cname}}</h1>
+                <p><strong>Slogan</strong>-{{$company->slogan}}&nbsp; Address-{{$company->address}}&nbsp; Phone-{{$company->phone}}&nbsp; Website-{{$company->website}}</p>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+
+
+
+* index.blade.php
+
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="col-md-12">
+        <div class="company-profile">
+            <img src="{{asset('cover/tumblr-image-sizes-banner.png')}}" style="width: 100%;">
+            <div class="company-desc">
+                <img src="{{asset('avatar/man.jpg')}}" width="100">
+                <p>{{$company->description}}</p>
+                <h1>{{$company->cname}}</h1>
+                <p><strong>Slogan</strong>-{{$company->slogan}}&nbsp; Address-{{$company->address}}&nbsp; Phone-{{$company->phone}}&nbsp; Website-{{$company->website}}</p>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </thead>
+            <tbody>
+                @foreach($company->jobs as $job)
+                <tr>
+                    <td><img src="{{asset('avatar/man.jpg')}}" width="80"></td>
+                    <td>Position:{{$job->position}}
+                        <br>
+                        <i class="fa fa-clock-o" aria-hidden="true"></i>&nbsp;{{$job->type}}
+                    </td>
+                    <td><i class="fa fa-map-marker" aria-hidden="true"></i>&nbsp;Address:{{$job->address}}</td>
+                    <td><i class="fa fa-globe" aria-hidden="true"></i>&nbsp;Date:{{$job->created_at->diffForHumans()}}</td>
+                    <td>
+                    <a href="{{route('jobs.show',[$job->id,$job->slug])}}">
+                        <button class="btn btn-success btn-sm">Apply</button>
+                    </a>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+    </div>
+</div>
+@endsection
